@@ -36,19 +36,24 @@
 #define FS_NO_GLOBALS
 #include "LittleFS.h"
 #include "dial_background.h"
+#include "turn_background.h"
+#include "ball_background.h"
+#include "ball.h"
 #include "plane_outline.h"
+#include "over_write.h"
 #include <FS.h>
 
-
 // https://github.com/Bodmer/TFT_eSPI
-#include <TFT_eSPI.h>                 // Hardware-specific library
-TFT_eSPI tft = TFT_eSPI();            // Invoke custom library
-TFT_eSprite spr = TFT_eSprite(&tft);  // Create Sprite object "spr" with pointer to "tft" object
+#include <TFT_eSPI.h>                  // Hardware-specific library
+TFT_eSPI tft = TFT_eSPI();             // Invoke custom library
+TFT_eSprite spr = TFT_eSprite(&tft);   // Create Sprite object "spr" with pointer to "tft" object
+TFT_eSprite bgSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
+TFT_eSprite ballBgSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
+TFT_eSprite ballSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
 
 // https://github.com/Bodmer/TFT_eFEX
-#include <TFT_eFEX.h>                 // Include the function extension library
-TFT_eFEX fex = TFT_eFEX(&tft);        // Create TFT_eFX object "fex" with pointer to "tft" object
-
+#include <TFT_eFEX.h>          // Include the function extension library
+TFT_eFEX fex = TFT_eFEX(&tft); // Create TFT_eFX object "fex" with pointer to "tft" object
 
 //====================================================================================
 //                                    Setup
@@ -56,12 +61,16 @@ TFT_eFEX fex = TFT_eFEX(&tft);        // Create TFT_eFX object "fex" with pointe
 void setup()
 {
   Serial.begin(115200); // Used for messages
-  while(!Serial); // Wait for Serial to be ready
+  while (!Serial)
+    ;          // Wait for Serial to be ready
   delay(1000); // wait for serial monitor to open
   Serial.println("\r\nRotated Sprite 3 example\n");
   tft.begin();
-  tft.setRotation(0);  // 0 & 2 Portrait. 1 & 3 landscape
+  tft.setRotation(0); // 0 & 2 Portrait. 1 & 3 landscape
   tft.setSwapBytes(true);
+  bgSpr.setSwapBytes(true);
+  ballBgSpr.setSwapBytes(true);
+  //ballSpr.setSwapBytes(true);
   tft.fillScreen(TFT_BLACK);
 
   LittleFSConfig cfg;
@@ -70,19 +79,15 @@ void setup()
   LittleFS.begin();
   // File f = LittleFS.open("/Eye_80x64.jpg", "r");
 
-
   // Create a sprite to hold the jpeg (or part of it)
   // CAC set impage depth.
   spr.setColorDepth(16);
   spr.createSprite(166, 33);
+  bgSpr.createSprite(turnOverWriteWidth, turnOverWriteHeight);
 
-//  Serial.println("Initialising SPIFFS");
+  ballBgSpr.createSprite(ballBackgroundwidth, ballBackgroundHeight);
+  ballSpr.createSprite(ballWidth, ballHeight);
 
-  // Initialise SPIFFS
-  // if (!SPIFFS.begin()) {
-  //   Serial.println("SPIFFS initialisation failed!");
-  //   while (1) yield(); // Stay here twiddling thumbs waiting
-  // }
   Serial.println("\r\nInitialisation done.\r\n");
 
   // Lists the files so you can see what is in the SPIFFS
@@ -90,31 +95,47 @@ void setup()
 
   Dir dir = LittleFS.openDir("/");
   Serial.printf("File size: %d\n", dir.fileSize());
-  while (dir.next()) {
-    Serial.print("File: "); Serial.print(dir.fileName());
-    if(dir.fileSize()) {
-        File f = dir.openFile("r");
-        Serial.println(f.size());
+  while (dir.next())
+  {
+    Serial.print("File: ");
+    Serial.print(dir.fileName());
+    if (dir.fileSize())
+    {
+      File f = dir.openFile("r");
+      Serial.println(f.size());
     }
-}
-
-
+  }
 
   // Note the / before the SPIFFS file name must be present, this means the file is in
   // the root directory of the SPIFFS, e.g. "/tiger.jpg" for a file called "tiger.jpg"
 
-  
-
   // Send jpeg info to serial port
   fex.jpegInfo("/plane_outline.jpg");
-  //fex.jpegInfo("/turn_coord_sprite.jpg");
+  // fex.jpegInfo("/turn_coord_sprite.jpg");
 
   // Draw jpeg image in Sprite spr at 0,0
-  //fex.drawJpeg("/turn_coord_sprite.jpg", 0 , 0, &spr);
+  // fex.drawJpeg("/turn_coord_sprite.jpg", 0 , 0, &spr);
   // fex.drawJpeg("/dial_background.jpg", 0 , 0, &spr);
   fex.drawBmp("/plane_outline.bmp", 0, 0, &spr);
- // fex.drawJpeg("/plane_outline.jpg", 0, 0, &spr);
+  // fex.drawJpeg("/plane_outline.jpg", 0, 0, &spr);
   // tft.pushImage(0,0, planeBmpWidth, planeBmpHeight, plane_outline,  TFT_BLACK, cmap &spr);
+
+  //bgSpr.pushImage(0, 0, turnOverWriteWidth, turnOverWriteHeight, turnOverwrite);
+  //  tft.fillScreen(TFT_DARKGREY);
+  //  fex.drawJpeg("/dial_background.jpg", 0 , 0);
+  tft.pushImage(0, 0, dialWidth, dialHeight, dial);
+
+  // Set the TFT pivot point to the centre of the screen
+  //tft.setPivot(160, 148);
+
+  bgSpr.setPivot(90, 45); // Center of the background.
+
+  // Set Sprite pivot point to centre of Sprite
+  spr.setPivot(spr.width() / 2, spr.height() / 2);
+  ballBgSpr.setPivot(ballBgSpr.width()/2, 0);
+
+  ballSpr.pushImage(0, 0, ballWidth, ballHeight, ball_image);
+  
 }
 
 //====================================================================================
@@ -123,33 +144,38 @@ void setup()
 void loop()
 {
 
-//  tft.fillScreen(TFT_DARKGREY);
-//  fex.drawJpeg("/dial_background.jpg", 0 , 0);
-  tft.pushImage(0, 0, dialWidth, dialHeight, dial);
-
-
-  // Set the TFT pivot point to the centre of the screen
-  tft.setPivot(160, 148);
-
-  // Set Sprite pivot point to centre of Sprite
-  spr.setPivot(spr.width() / 2, spr.height() / 2);
-
-  // Push Sprite to the TFT at 0,0 (not rotated)  
+  // Push Sprite to the TFT at 0,0 (not rotated)
   // CAC with black as transparent
-//  spr.pushSprite(0, 0, 0x00);
+  //  spr.pushSprite(0, 0, 0x00);
 
-//  delay(1000);
+  //  delay(1000);
 
   // Push copies of Sprite rotated through increasing angles 0-360 degrees
   // with 45 degree increments
-  for (int16_t angle = -15; angle <= 15; angle += 1) {
-  //    tft.fillScreen(TFT_DARKGREY);
-    spr.pushRotated(angle,TFT_BLACK);
+  for (int16_t angle = -30; angle <= 30; angle += 1)
+  {
+    bgSpr.pushImage(0, 0, turnOverWriteWidth, turnOverWriteHeight, turnOverwrite);   // Put a fresh background in the changing area to overwrite old plane.
+    spr.pushRotated(&bgSpr, angle, TFT_BLACK);  // Push the plane sprite on the background
+    bgSpr.pushSprite(69, 96);  // Push the background with the plane to the screen at appropriate spot. Coicicental coordinates!
+
+    ballBgSpr.pushImage(0, 0, ballBackgroundwidth, ballBackgroundHeight, ball_background);   // Put a fresh background in the changing area to overwrite old plane.
+    ballSpr.pushToSprite(&ballBgSpr, ballBgSpr.width()/2 + angle - 10, ballBgSpr.height() - ballSpr.height() - round((abs(angle)/5)) + 0, TFT_WHITE);  // Push the plane sprite on the background
+    ballBgSpr.pushSprite(97,236);  // Push the background with the plane to the screen at appropriate spot. Coicicental coordinates!
+
+
+
     delay(50);
   }
-  for (int16_t angle = 15; angle >= -15; angle -= 1) {
-  //    tft.fillScreen(TFT_DARKGREY);
-    spr.pushRotated(angle, TFT_BLACK);
+  for (int16_t angle = 30; angle >= -30; angle -= 1)
+  {
+  bgSpr.pushImage(0, 0, turnOverWriteWidth, turnOverWriteHeight, turnOverwrite);
+    spr.pushRotated(&bgSpr, angle, TFT_BLACK);
+    bgSpr.pushSprite(69,96);
+
+    ballBgSpr.pushImage(0, 0, ballBackgroundwidth, ballBackgroundHeight, ball_background);   // Put a fresh background in the changing area to overwrite old plane.
+    ballSpr.pushToSprite(&ballBgSpr, ballBgSpr.width()/2 + angle - 10, ballBgSpr.height() - ballSpr.height() - round((abs(angle)/5)) + 0, TFT_WHITE);  // Push the plane sprite on the background
+    ballBgSpr.pushSprite(97,236);  // Push the background with the plane to the screen at appropriate spot. Coicicental coordinates!
+
     delay(50);
   }
 
@@ -168,17 +194,17 @@ void loop()
                  |   Sprite    |
                  |_____________|
   */
- /*
-  spr.setPivot(40, -60);
+  /*
+   spr.setPivot(40, -60);
 
-  // Push Sprite to screen rotated about the new pivot points
-  // negative angle rotates Sprite anticlockwise
-  for (int16_t angle = 330; angle >= 0; angle -= 30) {
-    spr.pushRotated(angle);
-    yield(); // Stop watchdog triggering
-  }
+   // Push Sprite to screen rotated about the new pivot points
+   // negative angle rotates Sprite anticlockwise
+   for (int16_t angle = 330; angle >= 0; angle -= 30) {
+     spr.pushRotated(angle);
+     yield(); // Stop watchdog triggering
+   }
 
-  delay(5000);
-  */
+   delay(5000);
+   */
 }
 //====================================================================================
