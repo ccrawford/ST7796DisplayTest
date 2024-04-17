@@ -67,6 +67,7 @@ void setApStLight(bool state);
 void setApRdyLight(bool state);
 void setApHdLight(bool state);
 void setApAltLight(bool state);
+void setLowVoltLight(bool state);
 
 
 void displayLeds();
@@ -130,6 +131,7 @@ void loop()
     setApTrkHiLight(i<70);
     setApTrimUpLight(i>90);
     setApTrimDownLight(i<10);
+    setLowVoltLight(!(i/10 % 5));
     
 
     if (i>100) i = 0; 
@@ -221,4 +223,8 @@ void setApHdLight(bool state)
 void setApAltLight(bool state)
 {
   altLedState = state;
+}
+void setLowVoltLight(bool state)
+{
+  lowVoltLedState = state;
 }

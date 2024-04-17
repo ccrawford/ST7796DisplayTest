@@ -186,7 +186,7 @@ const unsigned short ReadyDot[400] PROGMEM={
 
 const uint16_t LowVoltFlag_width = 23;
 const uint16_t LowVoltFlag_height = 14;
-const uint16_t LowVoltFlag_x = 204;
+const uint16_t LowVoltFlag_x = 205;
 const uint16_t LowVoltFlag_y = 113;
 
 

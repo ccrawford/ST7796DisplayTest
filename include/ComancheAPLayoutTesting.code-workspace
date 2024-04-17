@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"name": "ST7796DisplayTest",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"compare": "cpp"
+		}
+	}
+}
