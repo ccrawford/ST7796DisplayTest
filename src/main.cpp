@@ -20,9 +20,9 @@
 
 #include <Arduino.h>
 
-#include "dial_background.h"
-#include "ball.h"
-#include "plane_outline.h"
+#include "dial_image.h"
+#include "ball_image.h"
+#include "plane_image.h"
 #include "LED_Images.h"
 
 #include <TFT_eSPI.h>      // Hardware-specific library
@@ -124,5 +124,7 @@ void loop()
     delay(10);
  
   }
+
+
 
 }
