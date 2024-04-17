@@ -38,6 +38,8 @@
 #include "dial_background.h"
 #include "turn_background.h"
 #include "ball_background.h"
+#include "lights_bg.h"
+#include "ready_light.h"
 #include "ball.h"
 #include "plane_outline.h"
 #include "over_write.h"
@@ -50,6 +52,8 @@ TFT_eSprite spr = TFT_eSprite(&tft);   // Create Sprite object "spr" with pointe
 TFT_eSprite bgSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
 TFT_eSprite ballBgSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
 TFT_eSprite ballSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
+TFT_eSprite lightsBgSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
+TFT_eSprite readyLightSpr = TFT_eSprite(&tft); // Create Sprite object "spr" with pointer to "tft" object
 
 // https://github.com/Bodmer/TFT_eFEX
 #include <TFT_eFEX.h>          // Include the function extension library
@@ -70,7 +74,7 @@ void setup()
   tft.setSwapBytes(true);
   bgSpr.setSwapBytes(true);
   ballBgSpr.setSwapBytes(true);
-  //ballSpr.setSwapBytes(true);
+  // ballSpr.setSwapBytes(true);
   tft.fillScreen(TFT_BLACK);
 
   LittleFSConfig cfg;
@@ -87,6 +91,11 @@ void setup()
 
   ballBgSpr.createSprite(ballBackgroundwidth, ballBackgroundHeight);
   ballSpr.createSprite(ballWidth, ballHeight);
+
+  lightsBgSpr.createSprite(LightsBgWidth, LightsBgHeight);
+  lightsBgSpr.setSwapBytes(true);
+  readyLightSpr.createSprite(readyDotWidth, readyDotHeight);
+  // readyLightSpr.setSwapBytes(true);
 
   Serial.println("\r\nInitialisation done.\r\n");
 
@@ -135,6 +144,7 @@ void setup()
   ballBgSpr.setPivot(ballBgSpr.width()/2, 0);
 
   ballSpr.pushImage(0, 0, ballWidth, ballHeight, ball_image);
+  readyLightSpr.pushImage(0, 0, readyDotWidth, readyDotHeight, ReadyDot);
   
 }
 
@@ -144,14 +154,7 @@ void setup()
 void loop()
 {
 
-  // Push Sprite to the TFT at 0,0 (not rotated)
-  // CAC with black as transparent
-  //  spr.pushSprite(0, 0, 0x00);
-
-  //  delay(1000);
-
-  // Push copies of Sprite rotated through increasing angles 0-360 degrees
-  // with 45 degree increments
+ 
   for (int16_t angle = -30; angle <= 30; angle += 1)
   {
     bgSpr.pushImage(0, 0, turnOverWriteWidth, turnOverWriteHeight, turnOverwrite);   // Put a fresh background in the changing area to overwrite old plane.
@@ -162,7 +165,12 @@ void loop()
     ballSpr.pushToSprite(&ballBgSpr, ballBgSpr.width()/2 + angle - 10, ballBgSpr.height() - ballSpr.height() - round((abs(angle)/5)) + 0, TFT_WHITE);  // Push the plane sprite on the background
     ballBgSpr.pushSprite(97,236);  // Push the background with the plane to the screen at appropriate spot. Coicicental coordinates!
 
-
+    lightsBgSpr.pushImage(0, 0, LightsBgWidth, LightsBgHeight, LightsBg);   // Put a fresh background in the changing area to overwrite old lights
+    if(angle < 10)
+    {
+    readyLightSpr.pushToSprite(&lightsBgSpr, 1, 49, TFT_WHITE);  // Push the LED sprite on the Lights background
+    }
+    lightsBgSpr.pushSprite(lightsBgX,lightsBgY);  // Push the background with the plane to the screen at appropriate spot. Coicicental coordinates!
 
     delay(50);
   }
@@ -181,30 +189,4 @@ void loop()
 
   delay(2000);
 
-  // Move Sprite pivot to a point above the image at 40,-60
-  // (Note: Top left corner is Sprite coordinate 0,0)
-  // The TFT pivot point has already been set to middle of screen.
-  /*                    .Pivot point at 40,-60
-                        ^
-                        |
-                       -60
-                  < 40 >|
-                  ______V______
-                 |             |
-                 |   Sprite    |
-                 |_____________|
-  */
-  /*
-   spr.setPivot(40, -60);
-
-   // Push Sprite to screen rotated about the new pivot points
-   // negative angle rotates Sprite anticlockwise
-   for (int16_t angle = 330; angle >= 0; angle -= 30) {
-     spr.pushRotated(angle);
-     yield(); // Stop watchdog triggering
-   }
-
-   delay(5000);
-   */
 }
-//====================================================================================
