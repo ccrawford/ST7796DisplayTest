@@ -85,23 +85,26 @@ void setup()
   delay(1000); // wait for serial monitor to open
   Serial.println("\r\nTurn Coordinator PoC\n");
 
-  tft.initDMA(); // Init DMA engine to speed up rendering
+  // Turn on the rp2040 LED.
+  // This will eventually get moved into Mobiflight, and it uses the Serial port,
+  // so the build-in LED can be used for very crude debugging. 
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+
+
+  // tft.initDMA(); // Init DMA engine to speed up rendering
 
   tft.begin();
   tft.setRotation(0); // 0 & 2 Portrait. 1 & 3 landscape
-  // tft.setSwapBytes(true);
-  // tft.pushImage(0, 0, dialWidth, dialHeight, dial);
+  tft.fillScreen(TFT_BLACK); // Clear screen. We are only going to use the top part. If you don't clear, the bottom half will be noise.
 
   mainSpr.createSprite(INSTRUMENT_WIDTH, INSTRUMENT_HEIGHT);
   mainSpr.setSwapBytes(true);
-  mainSpr.pushImage(0, 0, dialWidth, dialHeight, dial);
   mainSpr.setPivot(160, 150);                       // Set the pivot point for the rotation of the background
 
   // Create a sprite to hold the jpeg (or part of it)
-  // CAC set impage depth.
-  // planeSpr.setColorDepth(16);
   planeSpr.createSprite(planeOutlineWidth, planeOutlineHeight);
-  planeSpr.setPivot(83, 22); // Determined in paint program. Plane rotates around the center of the fuselage.
+  planeSpr.setPivot(planeCenterX, planeCenterY); // Determined in paint program. Plane rotates around the center of the fuselage.
   planeSpr.setSwapBytes(true);
   planeSpr.pushImage(0, 0, planeOutlineWidth, planeOutlineHeight, planeOutline);
 
@@ -120,7 +123,11 @@ void loop()
 
     static int i = 0;
 
-    setInclinometerBall((i-50)*2);
+    // For testing, we will just set things to values that excersize the elements.
+    // In the final version, these will be set by Mobiflight.
+
+    // Inclinometer ball goes from -1 to 1
+    setInclinometerBall((i-50)*2.0/100.0);
     setTurnCoordNeedle(i);
 
     setApAltLight(i/10 % 2);
@@ -136,6 +143,8 @@ void loop()
 
     if (i>100) i = 0; 
     else i++;
+
+    // This part will be in the mobiflight event loop
     
     mainSpr.pushImage(0, 0, dialWidth, dialHeight, dial); // Put a fresh background in the changing area to overwrite old plane.
     displayBall();
@@ -145,7 +154,8 @@ void loop()
     displayTurnCoordNeedle();
 
     mainSpr.pushSprite(0, 0); // Push the main sprite to the screen
-    delay(10);
+
+    delay(10);   // Wont need this in mobiflight; it handles delays.
 }
 
 void displayLeds()
@@ -173,6 +183,7 @@ void setTurnCoordNeedle(double percent)
   turnCoorNeedle = percent;
 }
 
+// Number from -1 to 1, with 0 being centered.
 void setInclinometerBall(double percent)
 {
   inclinometerBall = percent;
@@ -180,7 +191,7 @@ void setInclinometerBall(double percent)
 
 void displayBall()
 { 
-  double angle = inclinometerBall/2.0;
+  double angle = inclinometerBall * 50;
   ballSpr.pushToSprite(&mainSpr, mainSpr.width() / 2 + angle - 13, mainSpr.height() - ballSpr.height() - round((abs(angle) / 5)) - 22, TFT_WHITE);
 }
 

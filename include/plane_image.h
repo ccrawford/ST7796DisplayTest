@@ -10,6 +10,8 @@
 
 const uint16_t planeOutlineWidth = 166;
 const uint16_t planeOutlineHeight = 33;
+const uint16_t planeCenterX = 83;
+const uint16_t planeCenterY = 22;
 
 #if defined(__AVR__)
     #include <avr/pgmspace.h>
